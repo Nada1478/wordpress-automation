@@ -1,0 +1,51 @@
+name: Deploy WordPress to AWS
+# Corrected 'on' section with proper triggers
+on:
+  push:
+    branches: 
+      - main
+  workflow_dispatch: {}  # Explicit empty mapping
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-north-1
+
+      - name: Terraform Apply
+        id: tf
+        working-directory: terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
+          echo "IP=$(terraform output -raw instance_ip)" >> $GITHUB_OUTPUT
+
+      - name: Install Ansible
+        run: sudo apt update && sudo apt install -y ansible
+
+      - name: SSH Setup
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ steps.tf.outputs.IP }} >> ~/.ssh/known_hosts
+
+      - name: Create Inventory
+        run: |
+          echo "[all]" > ansible/inventory.ini
+          echo "${{ steps.tf.outputs.IP }} ansible_user=ubuntu" >> ansible/inventory.ini
+
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
