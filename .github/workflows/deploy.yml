@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,7 +15,6 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # ✅ This action actually authenticates with AWS
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -27,6 +25,10 @@ jobs:
       - name: Terraform Apply
         id: tf
         working-directory: terraform
+        env:  # ✅ Add this section
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-north-1
         run: |
           terraform init
           terraform apply -auto-approve
