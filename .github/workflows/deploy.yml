@@ -16,23 +16,6 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      - name: Debug: Check if AWS secrets exist
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        run: |
-          if [ -z "$AWS_ACCESS_KEY_ID" ]; then
-            echo "::error::AWS_ACCESS_KEY_ID is missing!"
-          else
-            echo "::notice::AWS_ACCESS_KEY_ID is set."
-          fi
-
-          if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-            echo "::error::AWS_SECRET_ACCESS_KEY is missing!"
-          else
-            echo "::notice::AWS_SECRET_ACCESS_KEY is set."
-          fi
-
       - name: Terraform Apply
         id: tf
         working-directory: terraform
