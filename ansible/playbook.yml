@@ -1,4 +1,3 @@
----
 - name: Install packages and configure WordPress
   hosts: all
   become: true
@@ -27,8 +26,12 @@
         dest: /var/www/html/
         remote_src: yes
 
-    - name: Move WordPress files to web root
-      command: mv /var/www/html/wordpress/* /var/www/html/
+    - name: Move WordPress files to web root (safe shell)
+      shell: |
+        shopt -s nullglob
+        mv /var/www/html/wordpress/* /var/www/html/
+      args:
+        executable: /bin/bash
 
     - name: Clean up extra files
       file:
