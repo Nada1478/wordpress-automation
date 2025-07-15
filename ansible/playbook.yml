@@ -13,13 +13,13 @@
           - mysql-server
           - wget
           - unzip
-        state: present          # ✅ Fixed spelling: was "persent"
-        update_cache: yes       # ✅ Fixed spelling: was "update_cash"
+        state: present
+        update_cache: yes
 
     - name: Download WordPress
-      get_url:                  # ✅ Fixed: use `get_url` instead of `wget`
+      get_url:
         url: https://wordpress.org/latest.tar.gz
-        dest: /tmp/wordpress.tar.gz   # ✅ Fixed typo: was .tar.giz
+        dest: /tmp/wordpress.tar.gz
 
     - name: Extract WordPress
       unarchive:
@@ -27,9 +27,21 @@
         dest: /var/www/html/
         remote_src: yes
 
+    - name: Move WordPress files to web root
+      command: mv /var/www/html/wordpress/* /var/www/html/
+
+    - name: Clean up extra files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/www/html/index.html
+        - /var/www/html/wordpress
+        - /tmp/wordpress.tar.gz
+
     - name: Set ownership of WordPress files
       file:
-        path: /var/www/html/wordpress    # ✅ Target the extracted folder
+        path: /var/www/html
         recurse: yes
         owner: www-data
         group: www-data
