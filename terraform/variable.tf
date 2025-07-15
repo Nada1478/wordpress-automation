@@ -32,6 +32,6 @@ variable "instance_type" {
 }
 
 variable "key1" {
-  default = "gns3s.pem"
+  default = "gns3s"
 
 }
