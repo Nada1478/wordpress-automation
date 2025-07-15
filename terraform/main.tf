@@ -100,8 +100,8 @@ resource "aws_security_group" "security1" {
 resource "aws_instance" "server1" {
   ami           = var.ec2_ami
   instance_type = var.instance_type
-  subnet_id     = var.public_subnet_cidr
-   key_name     = var.key1
+  subnet_id     = aws_subnet.publicsubnet1.id
+  key_name     = var.key1
   
 
   vpc_security_group_ids = [aws_security_group.security1.id]
