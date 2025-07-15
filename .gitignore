@@ -1,0 +1,9 @@
+# Ignore Terraform local data
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Ignore sensitive or temp files
+*.log
+*.pem
+*.key
