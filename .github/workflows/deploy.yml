@@ -10,21 +10,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # Setup Terraform
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # Debug secret visibility (optional but useful for testing)
       - name: Debug: Check if AWS secrets exist
         run: |
-          echo "AWS_ACCESS_KEY_ID present: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}"
-          echo "AWS_SECRET_ACCESS_KEY present: ${{ secrets.AWS_SECRET_ACCESS_KEY != '' }}"
+          if [ -z "${{ secrets.AWS_ACCESS_KEY_ID }}" ]; then
+            echo "::error::AWS_ACCESS_KEY_ID is missing!"
+          else
+            echo "::notice::AWS_ACCESS_KEY_ID is set."
+          fi
 
-      # Run Terraform with AWS credentials as env vars
+          if [ -z "${{ secrets.AWS_SECRET_ACCESS_KEY }}" ]; then
+            echo "::error::AWS_SECRET_ACCESS_KEY is missing!"
+          else
+            echo "::notice::AWS_SECRET_ACCESS_KEY is set."
+          fi
+
       - name: Terraform Apply
         id: tf
         working-directory: terraform
@@ -37,11 +42,9 @@ jobs:
           terraform apply -auto-approve
           echo "instance_ip=$(terraform output -raw instance_ip)" >> $GITHUB_OUTPUT
 
-      # Install Ansible
       - name: Install Ansible
         run: sudo apt update && sudo apt install -y ansible
 
-      # Setup SSH key and known hosts
       - name: Setup SSH Access
         run: |
           mkdir -p ~/.ssh
@@ -49,12 +52,10 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ steps.tf.outputs.instance_ip }} >> ~/.ssh/known_hosts
 
-      # Create dynamic Ansible inventory
       - name: Create Ansible Inventory
         run: |
           echo "[all]" > ansible/inventory.ini
           echo "${{ steps.tf.outputs.instance_ip }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
 
-      # Run the Ansible playbook
       - name: Run Ansible Playbook
         run: ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
