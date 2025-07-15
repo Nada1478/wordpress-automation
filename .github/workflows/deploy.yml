@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout your repo
+      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -18,22 +18,20 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
-      # Configure AWS credentials using GitHub secrets
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-north-1
+      # Debug secret visibility (optional but useful for testing)
+      - name: Debug: Check if AWS secrets exist
+        run: |
+          echo "AWS_ACCESS_KEY_ID present: ${{ secrets.AWS_ACCESS_KEY_ID != '' }}"
+          echo "AWS_SECRET_ACCESS_KEY present: ${{ secrets.AWS_SECRET_ACCESS_KEY != '' }}"
 
-      # Verify that AWS credentials are working
-      - name: Verify AWS Access
-        run: aws sts get-caller-identity
-
-      # Run Terraform and output instance IP
+      # Run Terraform with AWS credentials as env vars
       - name: Terraform Apply
         id: tf
         working-directory: terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-north-1
         run: |
           terraform init
           terraform apply -auto-approve
@@ -43,7 +41,7 @@ jobs:
       - name: Install Ansible
         run: sudo apt update && sudo apt install -y ansible
 
-      # Setup SSH key and known hosts for Ansible
+      # Setup SSH key and known hosts
       - name: Setup SSH Access
         run: |
           mkdir -p ~/.ssh
@@ -51,12 +49,12 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ steps.tf.outputs.instance_ip }} >> ~/.ssh/known_hosts
 
-      # Create Ansible inventory dynamically
+      # Create dynamic Ansible inventory
       - name: Create Ansible Inventory
         run: |
           echo "[all]" > ansible/inventory.ini
           echo "${{ steps.tf.outputs.instance_ip }} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa" >> ansible/inventory.ini
 
-      # Run the Ansible Playbook
+      # Run the Ansible playbook
       - name: Run Ansible Playbook
         run: ansible-playbook -i ansible/inventory.ini ansible/playbook.yml
