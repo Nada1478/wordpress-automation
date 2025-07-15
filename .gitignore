@@ -1,9 +1,28 @@
-# Ignore Terraform local data
+# === Terraform local data ===
 .terraform/
 *.tfstate
-*.tfstate.backup
+*.tfstate.*
+*.backup
+crash.log
 
-# Ignore sensitive or temp files
-*.log
+# === Terraform secrets ===
+*.tfvars
+*.tfvars.json
+
+# === SSH & sensitive keys ===
 *.pem
 *.key
+*.crt
+*.pub
+
+# === Ansible secrets / temp ===
+*.retry
+*.log
+inventory.ini  # ← ignore if dynamically generated
+
+# === VS Code / OS clutter ===
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ===
